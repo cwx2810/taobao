@@ -25,11 +25,31 @@ def search():
     except TimeoutException:
         return search()
 
+# 模拟点击下一页
+def next_page(page_number):
+    try:
+        # 等待页码输入框加载
+        input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > div.form > input')))
+        # 等待确定按钮加载
+        submit = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > div.form > span.btn.J_Submit')))
+        # 清楚页码输入框数字
+        input.clear()
+        # 输入页码
+        input.send_keys(page_number)
+        #点击确认
+        submit.click()
+        # 等待页码高亮元素显示我们想转到的那一页
+        wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > ul > li.item.active > span'), str(page_number)))
+    except TimeoutException:
+        next_page(page_number)
+
 def main():
     total = search()
     #在共100页中匹配出100数字
     total = int(re.compile('(\d+)').search(total).group(1))
-    print(total)
+    # 遍历翻100页
+    for i in range(2, total + 1):
+        next_page(i)
 
 if __name__ == '__main__':
     main()
