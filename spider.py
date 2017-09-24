@@ -4,6 +4,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from pyquery import PyQuery as pq
 
 browser = webdriver.Chrome()
 wait = WebDriverWait(browser, 10)
@@ -21,6 +22,7 @@ def search():
         submit.click()
         #等待总页码加载
         total = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > div.total')))
+        get_prodects()
         return total.text
     except TimeoutException:
         return search()
@@ -40,8 +42,28 @@ def next_page(page_number):
         submit.click()
         # 等待页码高亮元素显示我们想转到的那一页
         wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > ul > li.item.active > span'), str(page_number)))
+        get_prodects()
     except TimeoutException:
         next_page(page_number)
+
+# 获取网页信息
+def get_prodects():
+    # 判断商品是否加载成功
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#mainsrp-itemlist .items .item')))
+    # 拿到网页源代码
+    html = browser.page_source
+    doc = pq(html)
+    items = doc('#mainsrp-itemlist .items .item').items()
+    for item in items:
+        product = {
+            'image': item.find('.pic .img').attr('src'),
+            'price': item.find('.price').text(),
+            'deal': item.find('.deal-cnt').text()[:-3],
+            'title': item.find('.title').text(),
+            'shop': item.find('.shop').text(),
+            'location': item.find('.location').text()
+        }
+        print(product)
 
 def main():
     total = search()
