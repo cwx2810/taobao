@@ -5,6 +5,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pyquery import PyQuery as pq
+from config import *
+import pymongo
+
+client = pymongo.MongoClient(MONGO_URL)
+db = client[MONGO_DB]
 
 browser = webdriver.Chrome()
 wait = WebDriverWait(browser, 10)
@@ -64,6 +69,15 @@ def get_prodects():
             'location': item.find('.location').text()
         }
         print(product)
+        save_to_mongo(product)
+
+# 保存到数据库
+def save_to_mongo(result):
+    try:
+        if db[MONGO_TABLE].insert(result):
+            print('保存到mongoDB成功!', result)
+    except Exception:
+        print('保存到mongoDB错误!', result)
 
 def main():
     total = search()
