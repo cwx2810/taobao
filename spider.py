@@ -11,11 +11,14 @@ import pymongo
 client = pymongo.MongoClient(MONGO_URL)
 db = client[MONGO_DB]
 
-browser = webdriver.Chrome()
+browser = webdriver.PhantomJS(service_args=SERVICE_ARGS)
 wait = WebDriverWait(browser, 10)
+
+browser.set_window_size(1400, 900)
 
 #模拟搜索
 def search():
+    print('正在搜索...')
     try:
         browser.get('http://www.taobao.com')
         #等待搜索框加载
@@ -23,7 +26,7 @@ def search():
         #等待查询按钮加载
         submit = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#J_TSearchForm > div.search-button > button')))
         #模拟输入、点击
-        input.send_keys('美食')
+        input.send_keys(KEY_WORD)
         submit.click()
         #等待总页码加载
         total = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > div.total')))
@@ -34,6 +37,7 @@ def search():
 
 # 模拟点击下一页
 def next_page(page_number):
+    print('正在翻页', page_number)
     try:
         # 等待页码输入框加载
         input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#mainsrp-pager > div > div > div > div.form > input')))
@@ -80,12 +84,17 @@ def save_to_mongo(result):
         print('保存到mongoDB错误!', result)
 
 def main():
-    total = search()
-    #在共100页中匹配出100数字
-    total = int(re.compile('(\d+)').search(total).group(1))
-    # 遍历翻100页
-    for i in range(2, total + 1):
-        next_page(i)
+    try:
+        total = search()
+        #在共100页中匹配出100数字
+        total = int(re.compile('(\d+)').search(total).group(1))
+        # 遍历翻100页
+        for i in range(2, total + 1):
+            next_page(i)
+    except Exception:
+        print('出错啦啦啦啦啦啦啦~~~~~~~~')
+    finally:
+        browser.close()
 
 if __name__ == '__main__':
     main()
